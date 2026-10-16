@@ -1,0 +1,32 @@
+# HarmonyOS build output
+build/
+.hvigor/
+.idea/
+oh_modules/
+*.har
+*.hsp
+*.hap
+*.app
+
+# Signing material - never commit these
+*.p12
+*.cer
+*.p7b
+*.csr
+
+# NOTE: build-profile.json5 is deliberately NOT ignored. It holds the
+# products/modules config a fresh clone needs to build at all, so ignoring it
+# would break `git clone && hvigorw assembleHap`. The encrypted signing password
+# that `devecocli signature generate` writes into it is kept out of commits with:
+#     git update-index --skip-worktree build-profile.json5
+
+# Local artifacts (screenshots, logs, ui dumps)
+artifacts/
+
+# Editors / OS
+.DS_Store
+.vscode/
+
+# Local, private environment values (device serial/UDID, account label).
+# Kept out of the repo on purpose - see .env.local for the full list.
+.env.local
