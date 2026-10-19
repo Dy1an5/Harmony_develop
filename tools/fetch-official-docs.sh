@@ -79,7 +79,7 @@ DevEco CLI（npm，需 Node.js >= 22；官方文档指定的包名就是 @deveco
   # 另：跑联网子命令（auth/signature/update/...）时套一层去代理，否则会静默失败：
   #   env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY devecocli auth status
 
-详细步骤见 docs/toolchain/01-环境搭建.md
+详细步骤见 docs/02-工具链与工具位置.md
 URLS
 
 echo

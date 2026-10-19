@@ -38,7 +38,7 @@ hdc_() {
 # EOF, while the control path keeps working -- so `hdc list targets` goes on
 # answering "Connected" the whole time and nothing downstream notices. Log
 # evidence (heartbeats still flowing both ways while the work counter is
-# frozen) and the full story: docs/toolchain/03-踩过的坑.md 「坑 1」, raw logs in /tmp/hdc-*.log.
+# frozen) and the full story: docs/07-踩过的坑.md 「坑 1」, raw logs in /tmp/hdc-*.log.
 #
 # Hence two rules, implemented here:
 #   1. no short-lived hdc command runs without a timeout;
@@ -130,7 +130,7 @@ hdc_g() {
   local rc=0
   hdc_t "$t" "$@" || rc=$?
   [ "$rc" -eq 124 ] || return "$rc"
-  echo "hdc: '$*' gave no reply within ${t}s (docs/toolchain/03-踩过的坑.md 「坑 1」)" >&2
+  echo "hdc: '$*' gave no reply within ${t}s (docs/07-踩过的坑.md 「坑 1」)" >&2
   hdc_recover || return 124
   echo "hdc: retrying '$*'" >&2
   hdc_t "$t" "$@"
