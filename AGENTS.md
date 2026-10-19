@@ -21,6 +21,7 @@
 - `docs/toolchain/01-环境搭建.md`：工具链安装、签名、模拟器、能力边界
 - `docs/toolchain/02-日常操作.md`：构建/装机/拉起/看日志、调试手段、命令速查
 - `docs/toolchain/03-踩过的坑.md`：**真实踩到的坑与恢复方式，踩坑前先查这里**
+- `docs/toolchain/04-发布签名与上架打包.md`：**手动申请发布证书、上架打包、源码混淆 —— 上架前读这篇**
 
 发行与合规：
 
@@ -50,6 +51,7 @@
 - **不要随手改 `bundleName`**：它和 APP 备案、软著登记名称强绑定，改了要联动变更。
 - **不要凭记忆写鸿蒙 API**：先 `devecocli docs search <关键词>` 查本地文档，再写。
 - **不要跳过联网子命令的代理问题**：`http_proxy`/`https_proxy` 会让 `devecocli` 的联网子命令**静默失败**（`auth status` 会打印 `Not logged in` 且 `EXIT=0`）。跑这类命令时套 `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`。
+- **不要拿 release 包去 `hdc install` 验证**：调试签名 + release 模式报 `9568322`，发布签名则官方明示不支持本地安装。推论是**凡是只在 release 生效的东西（源码混淆、release 优化）本地都验证不了**，只能走 AGC 邀请测试。别为此白跑设备测试 —— 见 `docs/toolchain/04-发布签名与上架打包.md`。
 
 ## 验证一个改动是否work
 
