@@ -10,12 +10,31 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Machine-local values the docs deliberately keep out of the repo: device
+# serial/UDID, account label, project dir, bundleName. Gitignored and optional
+# -- a fresh clone simply has none of them.
+if [ -f "$ROOT/.env.local" ]; then
+  # shellcheck disable=SC1091
+  . "$ROOT/.env.local"
+fi
+
 if [ -f "$ROOT/scripts/env.sh" ]; then
   # shellcheck disable=SC1091
   . "$ROOT/scripts/env.sh" >/dev/null 2>&1 || true
 fi
 
+# .env.local uses HDOS_-prefixed names; map them onto what this script reads.
+# env.sh exports both as empty strings, so it is := (not :-) that assigns here.
+: "${HDOS_TARGET:=${HDOS_DEVICE_SERIAL:-}}"
+: "${BUNDLE_NAME:=${HDOS_BUNDLE_NAME:-}}"
+
 ARTIFACTS="$ROOT/artifacts"
+
+# Store builds use their own product. The `default` product carries the debug
+# signing config, so building it in release mode produces exactly the package
+# the device rejects (9568322 signature verification failed) -- and, worse, not
+# the store artifact. See docs/06-打包与签名工作流.md.
+HDOS_RELEASE_PRODUCT="${HDOS_RELEASE_PRODUCT:-release}"
 TARGET_ARGS=()
 if [ -n "${HDOS_TARGET:-}" ]; then
   TARGET_ARGS=(-t "$HDOS_TARGET")
@@ -187,8 +206,8 @@ HarmonyOS dev helper
   shell [cmd...]    run a command on the device
   recover           reset a wedged hdc session (reconnect, else restart server)
 
-  build [debug|release]   build HAP (default: debug)
-  app               build the release .app package (for AppGallery)
+  build [debug|release]   build HAP (default: debug; release picks the release product)
+  app               build the store .app (release product + release mode)
   clean             clean build outputs
   lint              run Code Linter
   check             run ArkTS static checks
@@ -222,6 +241,7 @@ cmd_env() {
   echo "BUNDLE_NAME=$(detect_bundle)"
   echo "ABILITY_NAME=${ABILITY_NAME:-EntryAbility}"
   echo "HDOS_TARGET=${HDOS_TARGET:-<default>}"
+  echo "HDOS_RELEASE_PRODUCT=$HDOS_RELEASE_PRODUCT"
   echo "HDOS_HDC_TIMEOUT=${HDOS_HDC_TIMEOUT:-60}"
   echo "HDOS_KEEP_PROXY=${HDOS_KEEP_PROXY:-<unset: proxy stripped for devecocli>}"
 }
@@ -278,19 +298,25 @@ cmd_build() {
     debug|release) ;;
     *) die "mode must be debug or release" ;;
   esac
+  local product=default
+  [ "$mode" = release ] && product="$HDOS_RELEASE_PRODUCT"
   if have devecocli; then
-    devecocli_ build --build-mode "$mode"
+    devecocli_ build --product "$product" --build-mode "$mode"
   else
-    hvigorw assembleHap -p buildMode="$mode" --no-daemon
+    hvigorw assembleHap -p product="$product" -p buildMode="$mode" --no-daemon
   fi
 }
 
-# The .app bundle (for AppGallery) is a hvigor task. devecocli has no equivalent
-# subcommand -- `devecocli build` only ever produces HAPs -- so this always goes
-# through hvigorw.
+# The .app bundle for AppGallery comes out of a release-mode build of the
+# release product. Plain `hvigorw assembleApp` would pick the default product
+# (debug signing) and produce a package that cannot be uploaded.
 cmd_app() {
   require_project
-  hvigorw assembleApp --no-daemon
+  if have devecocli; then
+    devecocli_ build --product "$HDOS_RELEASE_PRODUCT" --build-mode release
+  else
+    hvigorw assembleApp -p product="$HDOS_RELEASE_PRODUCT" -p buildMode=release --no-daemon
+  fi
 }
 
 cmd_clean() {
